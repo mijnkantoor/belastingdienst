@@ -1,0 +1,21 @@
+{
+  "name": "mijnkantoor/belastingdienst",
+  "description": "Calculate dutch tax objects",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Peter Mein",
+      "email": "peter@infratron.io"
+    }
+  ],
+  "require": {
+    "php": ">=7.1",
+    "myclabs/php-enum": "^1.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "Mijnkantoor\\Belastingdienst\\": "src/"
+    }
+  }
+}
