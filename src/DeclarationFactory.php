@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Mijnkantoor\Belastingdienst;
 
+use Carbon\Carbon;
 use Mijnkantoor\Belastingdienst\Enums\BlockTypes;
 
 class DeclarationFactory
 {
-    public function calculateBlock(\DateTime $from, \DateTime $till)
+    public function calculateBlock(Carbon $from, Carbon $till)
     {
         $diff = $from->diff($till);
 
@@ -35,6 +36,23 @@ class DeclarationFactory
 
         return BlockTypes::FOURWEEK();
         //shifted so must be a half month aka 4 weeks
+    }
+
+    public function calculatePeriod(BlockTypes $type, Carbon $from, Carbon $till)
+    {
+
+        switch ($type->getValue()) {
+            case BlockTypes::FOURWEEK:
+                $days = $from->firstOfYear()->diffInDays($till);
+                $period = floor($days / 25);
+                return $period > 13 ? $period - 1 : $period;
+            case BlockTypes::MONTHLY:
+                return $from->month;
+            case BlockTypes::HALFYEAR:
+                return $from->month < 6 ? 1 : 2;
+            case BlockTypes::YEARLY:
+                return 0;
+        }
     }
 
     public function create($id, TimeBlock $timeBlock)
