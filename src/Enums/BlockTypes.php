@@ -8,7 +8,7 @@ use MyCLabs\Enum\Enum;
 
 final class BlockTypes extends Enum
 {
-    public const MONTLY = 'monthly';
+    public const MONTHLY = 'monthly';
     public const FOURWEEK = 'fourweek';
     public const HALFYEAR = 'halfyear';
     public const YEARLY = 'yearly';

@@ -4,8 +4,39 @@ declare(strict_types=1);
 
 namespace Mijnkantoor\Belastingdienst;
 
+use Mijnkantoor\Belastingdienst\Enums\BlockTypes;
+
 class DeclarationFactory
 {
+    public function calculateBlock(\DateTime $from, \DateTime $till)
+    {
+        $diff = $from->diff($till);
+
+        if ($from->format('j') == 1) {
+            if ($diff->days <= 27) {
+                //Probably januari 4 weeks
+                return BlockTypes::FOURWEEK();
+            }
+
+            if ($diff->days >= 28 && $diff->days <= 31) {
+                //month
+                return BlockTypes::MONTHLY();
+            }
+
+            if ($diff->days > 168 && $diff->days <= 186) {
+                //half year
+                return BlockTypes::HALFYEAR();
+            }
+
+            //year
+            return BlockTypes::YEARLY();
+
+        }
+
+        return BlockTypes::FOURWEEK();
+        //shifted so must be a half month aka 4 weeks
+    }
+
     public function create($id, TimeBlock $timeBlock)
     {
         $identifier = substr($id, 0, 9);
