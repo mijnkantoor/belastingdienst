@@ -12,6 +12,7 @@ use Mijnkantoor\Belastingdienst\Exceptions\TimeBlockException;
 
 class TimeBlock
 {
+    protected $month;
     protected $year;
 
     /**
@@ -27,13 +28,15 @@ class TimeBlock
      */
     private $period;
 
-    public function __construct(DeclarationTypes $type, int $year, BlockTypes $block, int $period)
+
+    public function __construct(DeclarationTypes $type, int $year, int $month, BlockTypes $block, int $period)
     {
         if ($year < 1990 || $year > 2100) {
             throw TimeBlockException::invalidYear($year);
         }
 
         $this->year = $year;
+        $this->month = $month;
         $this->type = $type;
         $this->block = $block;
         $this->period = $period;
@@ -41,7 +44,7 @@ class TimeBlock
 
     public function getYearCode(): int
     {
-        return (int)((string)$this->year)[- 1];
+        return (int)((string)$this->year)[-1];
     }
 
     public function getTypeLetter(): string
@@ -49,6 +52,8 @@ class TimeBlock
         switch ($this->type->getValue()) {
             case DeclarationTypes::LOAN:
                 return 'L';
+            case DeclarationTypes::REVENUE:
+                return 'B';
         }
 
         throw DeclarationException::notSupported($this->type);
@@ -59,6 +64,8 @@ class TimeBlock
         switch ($this->type->getValue()) {
             case DeclarationTypes::LOAN:
                 return 6;
+            case DeclarationTypes::REVENUE:
+                return 1;
         }
 
         throw DeclarationException::notSupported($this->type);
@@ -77,6 +84,8 @@ class TimeBlock
         switch ($this->type->getValue()) {
             case DeclarationTypes::LOAN:
                 return $this->getPeriodCodeForLoan();
+            case DeclarationTypes::REVENUE:
+                return $this->getPeriodCodeForRevenue();
         }
 
         throw DeclarationException::notSupported($this->type);
@@ -85,12 +94,24 @@ class TimeBlock
     public function getPeriodCodeForLoan(): string
     {
         switch ($this->block->getValue()) {
-            case BlockTypes::MONTLY:
+            case BlockTypes::MONTHLY:
                 return str_pad((string)$this->period, 2, '0', STR_PAD_LEFT);
             case BlockTypes::FOURWEEK:
-                return $this->period >= 10 ? "8" . $this->period[- 1] : "7" . $this->period[- 1];
+                return $this->period >= 10 ? "8" . ((string)$this->period)[-1] : "7" . $this->period;
             case BlockTypes::HALFYEAR:
                 return "3" . $this->period;
+            case BlockTypes::YEARLY:
+                return "40";
+        }
+    }
+
+    public function getPeriodCodeForRevenue(): string
+    {
+        switch ($this->block->getValue()) {
+            case BlockTypes::MONTHLY:
+                return str_pad((string)$this->period, 2, '0', STR_PAD_LEFT);
+            case BlockTypes::QUARTER:
+                return (string) ((int)$this->month + 20);
             case BlockTypes::YEARLY:
                 return "40";
         }

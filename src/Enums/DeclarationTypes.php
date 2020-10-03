@@ -9,4 +9,5 @@ use MyCLabs\Enum\Enum;
 final class DeclarationTypes extends Enum
 {
     public const LOAN = 'loan';
+    public const REVENUE = 'revenue';
 }

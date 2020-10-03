@@ -6,6 +6,7 @@ namespace Mijnkantoor\Belastingdienst;
 
 use Carbon\Carbon;
 use Mijnkantoor\Belastingdienst\Enums\BlockTypes;
+use Mijnkantoor\Belastingdienst\Enums\DeclarationTypes;
 
 class DeclarationFactory
 {
@@ -24,6 +25,11 @@ class DeclarationFactory
                 return BlockTypes::MONTHLY();
             }
 
+            if ($diff->days > 31 && $diff->days <= 168) {
+                //half year
+                return BlockTypes::QUARTER();
+            }
+
             if ($diff->days > 168 && $diff->days <= 186) {
                 //half year
                 return BlockTypes::HALFYEAR();
@@ -38,16 +44,18 @@ class DeclarationFactory
         //shifted so must be a half month aka 4 weeks
     }
 
-    public function calculatePeriod(BlockTypes $type, Carbon $from, Carbon $till)
+    public function calculatePeriod(BlockTypes $type, Carbon $from, Carbon $till): int
     {
 
         switch ($type->getValue()) {
             case BlockTypes::FOURWEEK:
                 $days = $from->firstOfYear()->diffInDays($till);
-                $period = floor($days / 25);
+                $period = (int)floor($days / 25);
                 return $period > 13 ? $period - 1 : $period;
             case BlockTypes::MONTHLY:
                 return $from->month;
+            case BlockTypes::QUARTER:
+                return $from->quarter;
             case BlockTypes::HALFYEAR:
                 return $from->month < 6 ? 1 : 2;
             case BlockTypes::YEARLY:
@@ -55,33 +63,41 @@ class DeclarationFactory
         }
     }
 
-    public function create($id, TimeBlock $timeBlock)
+    public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till)
     {
-        $identifier = substr($id, 0, 9);
-        $subCode = substr($id, 10, 2);
+        $blockType = $this->calculateBlock($from, $till);
+        $period = $this->calculatePeriod($blockType, $from, $till);
 
-        //Composite declaration id
-        $declarationId = sprintf('%d.%s.%s.%s',
-            $identifier,
-            $timeBlock->getTypeLetter(),
-            $subCode,
-            $timeBlock->createTimeCode()
+        $year = $from->year;
+        $month = $from->month; // we need this one for shifted quarters
+
+        $block = new TimeBlock(
+            $decType,
+            $year,
+            $month,
+            $blockType,
+            $period
         );
 
+        return $this->create($declarationId, $block);
+    }
 
-        $strippedDeclarationId = str_replace('.', '', $declarationId);
+    public function create($declarationId, TimeBlock $timeBlock)
+    {
+        $declarationIdStripped = preg_replace('/[\s.]+/', '', $declarationId);
 
         //Composite the payment reference
-        $paymentReference = sprintf('0%s%s%s%s%s',
-            substr($strippedDeclarationId, 0, 8),
+        $paymentReference = sprintf('X%s%s%s%s%s%s',
+            substr($declarationIdStripped, 0, 8),
             $timeBlock->getTypeCode(),
-            $strippedDeclarationId[12],
-            substr($strippedDeclarationId, 10, 2),
-            substr($strippedDeclarationId, 13, 3)
+            $timeBlock->getYearCode(),
+            substr($declarationIdStripped, 10, 2),
+            $timeBlock->getPeriodCode(),
+            0 // fixed value
         );
 
         //Calculate control number
-        $controlNumber = $this->validatePaymentReferenceNetherlands($paymentReference);
+        $controlNumber = $this->getControllNumber($paymentReference);
 
         //Substitude control number
         $paymentReference[0] = $controlNumber;
@@ -89,7 +105,7 @@ class DeclarationFactory
         return new Declaration($declarationId, $paymentReference);
     }
 
-    private function validatePaymentReferenceNetherlands($value)
+    private function getControllNumber($value)
     {
         $number = substr($value, (strlen($value) === 16 ? 1 : 2));
 
