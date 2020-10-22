@@ -11,10 +11,13 @@ class Declaration
 
     public $paymentReference;
 
-    public function __construct($declarationId, $paymentReference)
+    public $paymentDueDate;
+
+    public function __construct($declarationId, $paymentReference, $paymentDueDate)
     {
 
         $this->declarationId = $declarationId;
         $this->paymentReference = $paymentReference;
+        $this->paymentDueDate = $paymentDueDate;
     }
 }

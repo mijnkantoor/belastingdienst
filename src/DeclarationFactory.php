@@ -10,6 +10,27 @@ use Mijnkantoor\Belastingdienst\Enums\DeclarationTypes;
 
 class DeclarationFactory
 {
+    public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till)
+    {
+        $blockType = $this->calculateBlock($from, $till);
+        $period = $this->calculatePeriod($blockType, $from, $till);
+
+        $year = $from->year;
+        $month = $from->month; // we need this one for shifted quarters
+
+        $block = new TimeBlock(
+            $decType,
+            $year,
+            $month,
+            $blockType,
+            $period,
+            $from,
+            $till
+        );
+
+        return $this->create($declarationId, $block);
+    }
+
     public function calculateBlock(Carbon $from, Carbon $till)
     {
         $diff = $from->diff($till);
@@ -63,25 +84,6 @@ class DeclarationFactory
         }
     }
 
-    public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till)
-    {
-        $blockType = $this->calculateBlock($from, $till);
-        $period = $this->calculatePeriod($blockType, $from, $till);
-
-        $year = $from->year;
-        $month = $from->month; // we need this one for shifted quarters
-
-        $block = new TimeBlock(
-            $decType,
-            $year,
-            $month,
-            $blockType,
-            $period
-        );
-
-        return $this->create($declarationId, $block);
-    }
-
     public function create($declarationId, TimeBlock $timeBlock)
     {
         $declarationIdStripped = preg_replace('/[\s.]+/', '', $declarationId);
@@ -99,10 +101,13 @@ class DeclarationFactory
         //Calculate control number
         $controlNumber = $this->getControllNumber($paymentReference);
 
-        //Substitude control number
+        //Substitute control number
         $paymentReference[0] = $controlNumber;
 
-        return new Declaration($declarationId, $paymentReference);
+        //Calculate date
+        $paymentDueDate = $this->calculatePaymentDueDate($timeBlock);
+
+        return new Declaration($declarationId, $paymentReference, $paymentDueDate);
     }
 
     private function getControllNumber($value)
@@ -135,4 +140,16 @@ class DeclarationFactory
         return $check == 10 ? 1 : ($check == 11 ? 0 : $check);
     }
 
+    public function calculatePaymentDueDate(TimeBlock $timeBlock)
+    {
+        switch ($timeBlock->getBlock()) {
+            case BlockTypes::FOURWEEK:
+                return $timeBlock->getTill()->addMonth();
+            case BlockTypes::MONTHLY:
+            case BlockTypes::QUARTER:
+            case BlockTypes::HALFYEAR:
+            case BlockTypes::YEARLY:
+                return $timeBlock->getTill()->addMonthNoOverflow()->endOfMonth();
+        }
+    }
 }

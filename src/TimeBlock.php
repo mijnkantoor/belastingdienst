@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Mijnkantoor\Belastingdienst;
 
 
+use Carbon\Carbon;
 use Mijnkantoor\Belastingdienst\Enums\BlockTypes;
 use Mijnkantoor\Belastingdienst\Enums\DeclarationTypes;
 use Mijnkantoor\Belastingdienst\Exceptions\DeclarationException;
@@ -26,10 +27,28 @@ class TimeBlock
     /**
      * @var int
      */
-    private $period;
+    protected $period;
+    /**
+     * @var Carbon
+     */
+    protected $from;
+    /**
+     * @var Carbon
+     */
+    protected $till;
 
 
-    public function __construct(DeclarationTypes $type, int $year, int $month, BlockTypes $block, int $period)
+    /**
+     * TimeBlock constructor.
+     * @param DeclarationTypes $type
+     * @param int $year
+     * @param int $month
+     * @param BlockTypes $block
+     * @param int $period
+     * @param Carbon $from
+     * @param Carbon $till
+     */
+    public function __construct(DeclarationTypes $type, int $year, int $month, BlockTypes $block, int $period, Carbon $from, Carbon $till)
     {
         if ($year < 1990 || $year > 2100) {
             throw TimeBlockException::invalidYear($year);
@@ -40,11 +59,8 @@ class TimeBlock
         $this->type = $type;
         $this->block = $block;
         $this->period = $period;
-    }
-
-    public function getYearCode(): int
-    {
-        return (int)((string)$this->year)[-1];
+        $this->from = $from;
+        $this->till = $till;
     }
 
     public function getTypeLetter(): string
@@ -79,6 +95,11 @@ class TimeBlock
         );
     }
 
+    public function getYearCode(): int
+    {
+        return (int)((string)$this->year)[- 1];
+    }
+
     public function getPeriodCode(): string
     {
         switch ($this->type->getValue()) {
@@ -97,7 +118,7 @@ class TimeBlock
             case BlockTypes::MONTHLY:
                 return str_pad((string)$this->period, 2, '0', STR_PAD_LEFT);
             case BlockTypes::FOURWEEK:
-                return $this->period >= 10 ? "8" . ((string)$this->period)[-1] : "7" . $this->period;
+                return $this->period >= 10 ? "8" . ((string)$this->period)[- 1] : "7" . $this->period;
             case BlockTypes::HALFYEAR:
                 return "3" . $this->period;
             case BlockTypes::YEARLY:
@@ -111,9 +132,49 @@ class TimeBlock
             case BlockTypes::MONTHLY:
                 return str_pad((string)$this->period, 2, '0', STR_PAD_LEFT);
             case BlockTypes::QUARTER:
-                return (string) ((int)$this->month + 20);
+                return (string)((int)$this->month + 20);
             case BlockTypes::YEARLY:
                 return "40";
         }
+    }
+
+    /**
+     * @return BlockTypes
+     */
+    public function getBlock(): BlockTypes
+    {
+        return $this->block;
+    }
+
+    /**
+     * @param BlockTypes $block
+     */
+    public function setBlock(BlockTypes $block): void
+    {
+        $this->block = $block;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPeriod(): int
+    {
+        return $this->period;
+    }
+
+    /**
+     * @return Carbon
+     */
+    public function getFrom(): Carbon
+    {
+        return $this->from;
+    }
+
+    /**
+     * @return Carbon
+     */
+    public function getTill(): Carbon
+    {
+        return $this->till;
     }
 }
