@@ -9,4 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: php-actions/composer@v1
+        with:
+          memory_limit: 256M
       - uses: php-actions/phpunit@v9
