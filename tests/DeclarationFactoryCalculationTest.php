@@ -159,6 +159,7 @@ class DeclarationFactoryCalculationTest extends \PHPUnit\Framework\TestCase
                 ['27-01-2020', '23-02-2020', '001000330L07', '0001000336007720', '23-03-2020'],
                 ['13-07-2020', '09-08-2020', '001000330L07', '9001000336007780', '09-09-2020'],
                 ['30-11-2020', '31-12-2020', '001000330L07', '1001000336007830', '31-01-2021'],
+                ['07-09-2020', '04-10-2020', '857256476L01', '0857256476001800', '04-11-2020'],
 
                 // year
                 ['01-01-2020', '31-12-2020', '001000330L07', '1001000336007400', '31-01-2021'],
@@ -197,7 +198,6 @@ class DeclarationFactoryCalculationTest extends \PHPUnit\Framework\TestCase
 
                 $this->assertEquals($declaration->paymentReference, $testRule[3]);
                 $this->assertEquals($declaration->paymentDueDate->format('d-m-Y'), $testRule[4]);
-
             }
         }
     }

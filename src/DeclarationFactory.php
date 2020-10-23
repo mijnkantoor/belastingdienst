@@ -7,11 +7,15 @@ namespace Mijnkantoor\Belastingdienst;
 use Carbon\Carbon;
 use Mijnkantoor\Belastingdienst\Enums\BlockTypes;
 use Mijnkantoor\Belastingdienst\Enums\DeclarationTypes;
+use Mijnkantoor\Belastingdienst\Exceptions\PeriodException;
 
 class DeclarationFactory
 {
     public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till)
     {
+        $from = $from->copy();
+        $till = $till->copy();
+
         $blockType = $this->calculateBlock($from, $till);
         $period = $this->calculatePeriod($blockType, $from, $till);
 
@@ -67,12 +71,14 @@ class DeclarationFactory
 
     public function calculatePeriod(BlockTypes $type, Carbon $from, Carbon $till): int
     {
+        $from = $from->copy();
+        $firstOfYear = $from->copy()->firstOfYear();
+        $till = $till->copy();
+
 
         switch ($type->getValue()) {
             case BlockTypes::FOURWEEK:
-                $days = $from->firstOfYear()->diffInDays($till);
-                $period = (int)floor($days / 25);
-                return $period > 13 ? $period - 1 : $period;
+                return $this->calculateFourWeekPeriod($from);
             case BlockTypes::MONTHLY:
                 return $from->month;
             case BlockTypes::QUARTER:
@@ -82,6 +88,45 @@ class DeclarationFactory
             case BlockTypes::YEARLY:
                 return 0;
         }
+    }
+
+    public function calculateFourWeekPeriod(Carbon $from): int
+    {
+        $entry = $from->copy();
+        $table = $this->generateFourWeekPeriodTable($entry);
+
+        foreach ($table as $key => $periodRow) {
+            if ($from->between($periodRow['from'], $periodRow['till'])) {
+                return $key;
+            }
+        }
+
+        throw PeriodException::invalidPeriod();
+    }
+
+    public function generateFourWeekPeriodTable(Carbon $from)
+    {
+        $from = $from->copy()->startOfYear();
+        $startCount = $from->copy()->previous('Sunday');
+        $till = $startCount->copy()->addWeeks(4);
+        $endOfYear = $from->copy()->endOfYear();
+
+
+        $table = [];
+        $table[1] = ['from' => $from->copy(), 'till' => $till->copy()];
+
+        for ($i = 2; $i < 14; $i ++) {
+            $from = $till->copy()->addDay();
+            $till = $from->copy()->addWeeks(4)->subDay();
+
+            if ($i == 13) {
+                $till = $endOfYear;
+            }
+
+            $table[$i] = ['from' => $from, 'till' => $till];
+        }
+
+        return $table;
     }
 
     public function create($declarationId, TimeBlock $timeBlock)
@@ -142,14 +187,16 @@ class DeclarationFactory
 
     public function calculatePaymentDueDate(TimeBlock $timeBlock)
     {
+        $till = $timeBlock->getTill()->copy();
+
         switch ($timeBlock->getBlock()) {
             case BlockTypes::FOURWEEK:
-                return $timeBlock->getTill()->addMonth();
+                return $till->addMonth();
             case BlockTypes::MONTHLY:
             case BlockTypes::QUARTER:
             case BlockTypes::HALFYEAR:
             case BlockTypes::YEARLY:
-                return $timeBlock->getTill()->addMonthNoOverflow()->endOfMonth();
+                return $till->addMonthNoOverflow()->endOfMonth();
         }
     }
 }

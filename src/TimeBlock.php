@@ -13,9 +13,14 @@ use Mijnkantoor\Belastingdienst\Exceptions\TimeBlockException;
 
 class TimeBlock
 {
+    /**
+     * @var int
+     */
     protected $month;
+    /**
+     * @var int
+     */
     protected $year;
-
     /**
      * @var DeclarationTypes
      */
@@ -176,5 +181,29 @@ class TimeBlock
     public function getTill(): Carbon
     {
         return $this->till;
+    }
+
+    /**
+     * @return DeclarationTypes
+     */
+    public function getType(): DeclarationTypes
+    {
+        return $this->type;
+    }
+
+    /**
+     * @return int
+     */
+    public function getYear(): int
+    {
+        return $this->year;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMonth(): int
+    {
+        return $this->month;
     }
 }

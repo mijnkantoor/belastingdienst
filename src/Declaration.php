@@ -29,7 +29,6 @@ class Declaration
             substr(self::IBAN, 8, 4),
             substr(self::IBAN, 12, 4),
             substr(self::IBAN, 16, 2));
-
     }
 
     public function getFormattedPaymentReference(): string
