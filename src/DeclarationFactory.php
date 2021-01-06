@@ -7,17 +7,22 @@ namespace Mijnkantoor\Belastingdienst;
 use Carbon\Carbon;
 use Mijnkantoor\Belastingdienst\Enums\BlockTypes;
 use Mijnkantoor\Belastingdienst\Enums\DeclarationTypes;
+use Mijnkantoor\Belastingdienst\Exceptions\DeclarationException;
 use Mijnkantoor\Belastingdienst\Exceptions\PeriodException;
 
 class DeclarationFactory
 {
-    public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till)
+    public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till, BlockTypes $blockType = null, int $period = null)
     {
         $from = $from->copy();
         $till = $till->copy();
 
-        $blockType = $this->calculateBlock($from, $till);
-        $period = $this->calculatePeriod($blockType, $from, $till);
+        if ($blockType === null && $decType === DeclarationTypes::LOAN()) {
+            throw DeclarationException::incompatbleLoan();
+        }
+
+        $blockType = $blockType ?? $this->calculateBlock($from, $till);
+        $period = $period ?? $this->calculatePeriod($blockType, $from, $till);
 
         $year = $from->year;
         $month = $from->month; // we need this one for shifted quarters
@@ -108,6 +113,11 @@ class DeclarationFactory
     {
         $from = $from->copy()->startOfYear();
         $startCount = $from->copy()->previous('Sunday');
+
+        if ($from->weekOfYear > 1) {
+            $startCount = $from->copy()->addWeek()->previous('Sunday');
+        }
+
         $till = $startCount->copy()->addWeeks(4);
         $endOfYear = $from->copy()->endOfYear();
 
@@ -191,7 +201,11 @@ class DeclarationFactory
 
         switch ($timeBlock->getBlock()) {
             case BlockTypes::FOURWEEK:
-                return $till->addMonth();
+                $till->addMonth();
+                if ($till->month - $timeBlock->getTill()->month > 1) {
+                    $till->subMonth()->endOfMonth();
+                }
+                return $till;
             case BlockTypes::MONTHLY:
             case BlockTypes::QUARTER:
             case BlockTypes::HALFYEAR:
