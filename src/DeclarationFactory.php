@@ -12,7 +12,7 @@ use Mijnkantoor\Belastingdienst\Exceptions\PeriodException;
 
 class DeclarationFactory
 {
-    public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till, BlockTypes $blockType = null)
+    public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till, BlockTypes $blockType = null, int $period = null)
     {
         $from = $from->copy();
         $till = $till->copy();
@@ -22,7 +22,7 @@ class DeclarationFactory
         }
 
         $blockType = $blockType ?? $this->calculateBlock($from, $till);
-        $period = $this->calculatePeriod($blockType, $from, $till);
+        $period = $period ?? $this->calculatePeriod($blockType, $from, $till);
 
         $year = $from->year;
         $month = $from->month; // we need this one for shifted quarters
@@ -201,7 +201,11 @@ class DeclarationFactory
 
         switch ($timeBlock->getBlock()) {
             case BlockTypes::FOURWEEK:
-                return $till->addMonth();
+                $till->addMonth();
+                if ($till->month - $timeBlock->getTill()->month > 1) {
+                    $till->subMonth()->endOfMonth();
+                }
+                return $till;
             case BlockTypes::MONTHLY:
             case BlockTypes::QUARTER:
             case BlockTypes::HALFYEAR:
