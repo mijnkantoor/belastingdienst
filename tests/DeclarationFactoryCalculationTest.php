@@ -120,6 +120,11 @@ class DeclarationFactoryCalculationTest extends \PHPUnit\Framework\TestCase
             $factory->calculatePeriod(\Mijnkantoor\Belastingdienst\Enums\BlockTypes::FOURWEEK(), new Carbon('30-11-2020'), new Carbon('31-12-2020'))
         );
 
+        $this->assertEquals(
+            1,
+            $factory->calculatePeriod(\Mijnkantoor\Belastingdienst\Enums\BlockTypes::FOURWEEK(), new Carbon('01-01-2021'), new Carbon('31-01-2021'))
+        );
+
         //Half year
         $this->assertEquals(
             1,
@@ -127,9 +132,16 @@ class DeclarationFactoryCalculationTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->assertEquals(
+            1,
+            $factory->calculatePeriod(\Mijnkantoor\Belastingdienst\Enums\BlockTypes::HALFYEAR(), new Carbon('01-01-2021'), new Carbon('26-12-2021'))
+        );
+
+
+        $this->assertEquals(
             2,
             $factory->calculatePeriod(\Mijnkantoor\Belastingdienst\Enums\BlockTypes::HALFYEAR(), new Carbon('01-07-2020'), new Carbon('31-12-2020'))
         );
+
 
         //Year
         $this->assertEquals(
@@ -160,6 +172,7 @@ class DeclarationFactoryCalculationTest extends \PHPUnit\Framework\TestCase
                 ['13-07-2020', '09-08-2020', '001000330L07', '9001000336007780', '09-09-2020'],
                 ['30-11-2020', '31-12-2020', '001000330L07', '1001000336007830', '31-01-2021'],
                 ['07-09-2020', '04-10-2020', '857256476L01', '0857256476001800', '04-11-2020'],
+                ['01-01-2021', '31-01-2021', '857256476L01', '6857256476101710', '04-11-2020'],
 
                 // year
                 ['01-01-2020', '31-12-2020', '001000330L07', '1001000336007400', '31-01-2021'],

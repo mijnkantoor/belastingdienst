@@ -7,16 +7,21 @@ namespace Mijnkantoor\Belastingdienst;
 use Carbon\Carbon;
 use Mijnkantoor\Belastingdienst\Enums\BlockTypes;
 use Mijnkantoor\Belastingdienst\Enums\DeclarationTypes;
+use Mijnkantoor\Belastingdienst\Exceptions\DeclarationException;
 use Mijnkantoor\Belastingdienst\Exceptions\PeriodException;
 
 class DeclarationFactory
 {
-    public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till)
+    public function createFromDeclarationIdAndDateRange(DeclarationTypes $decType, $declarationId, Carbon $from, Carbon $till, BlockTypes $blockType = null)
     {
         $from = $from->copy();
         $till = $till->copy();
 
-        $blockType = $this->calculateBlock($from, $till);
+        if ($blockType === null && $decType === DeclarationTypes::LOAN()) {
+            throw DeclarationException::incompatbleLoan();
+        }
+
+        $blockType = $blockType ?? $this->calculateBlock($from, $till);
         $period = $this->calculatePeriod($blockType, $from, $till);
 
         $year = $from->year;
@@ -108,6 +113,11 @@ class DeclarationFactory
     {
         $from = $from->copy()->startOfYear();
         $startCount = $from->copy()->previous('Sunday');
+
+        if ($from->weekOfYear > 1) {
+            $startCount = $from->copy()->addWeek()->previous('Sunday');
+        }
+
         $till = $startCount->copy()->addWeeks(4);
         $endOfYear = $from->copy()->endOfYear();
 

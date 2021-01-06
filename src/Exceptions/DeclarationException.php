@@ -11,4 +11,9 @@ class DeclarationException extends \RuntimeException
         return new self(sprintf('Unsupported type %s', $type));
     }
 
+    public static function incompatbleLoan()
+    {
+        return new self('We can\'t guarantee loan calculation without blockType');
+    }
+
 }
