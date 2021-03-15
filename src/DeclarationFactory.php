@@ -45,12 +45,7 @@ class DeclarationFactory
         $diff = $from->diff($till);
 
         if ($from->format('j') == 1) {
-            if ($diff->days <= 27) {
-                //Probably januari 4 weeks
-                return BlockTypes::FOURWEEK();
-            }
-
-            if ($diff->days >= 28 && $diff->days <= 31) {
+            if ($diff->days >= 27 && $diff->days <= 31) {
                 //month
                 return BlockTypes::MONTHLY();
             }

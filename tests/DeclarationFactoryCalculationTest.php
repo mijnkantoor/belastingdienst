@@ -36,21 +36,6 @@ class DeclarationFactoryCalculationTest extends \PHPUnit\Framework\TestCase
             $factory->calculateBlock(new Carbon('01-06-2020'), new Carbon('30-06-2020'))
         );
 
-        //Four weeks
-        $this->assertEquals(
-            BlockTypes::FOURWEEK(),
-            $factory->calculateBlock(new Carbon('01-01-2020'), new Carbon('26-01-2020'))
-        );
-        $this->assertEquals(
-            BlockTypes::FOURWEEK(),
-            $factory->calculateBlock(new Carbon('27-01-2020'), new Carbon('23-02-2020'))
-        );
-
-        $this->assertEquals(
-            BlockTypes::FOURWEEK(),
-            $factory->calculateBlock(new Carbon('30-11-2020'), new Carbon('31-12-2020'))
-        );
-
         //Half year
         $this->assertEquals(
             BlockTypes::HALFYEAR(),
